@@ -7,9 +7,16 @@
   },
   "dependencies": {
     "next": "3.0.1-beta.21",
+    "rc-time-picker": "^2.4.1",
     "react": "^15.6.1",
     "react-datepicker": "^0.53.0",
     "react-dom": "^15.6.1",
-    "react-google-maps": "next"
+    "react-google-maps": "next",
+    "react-time": "^4.3.0",
+    "react-time-input": "0.0.16",
+    "style-loader": "^0.18.2"
+  },
+  "devDependencies": {
+    "next-style-loader": "^0.3.1"
   }
 }

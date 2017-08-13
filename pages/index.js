@@ -1,7 +1,14 @@
+//import 'rc-time-picker/assets/index.css';
+
 import { Component } from 'react';
 import Link from 'next/link';
 import Head from '../components/head';
 import GoogleMap from '../components/googlemap';
+
+
+function onChange(value) {
+  console.log(value && value.format(str));
+}
 
 export default class extends Component {
   constructor(props) {
@@ -23,7 +30,7 @@ export default class extends Component {
       };
   }
 
-  getMarkers = (service) => {
+  loadMarkers = (service) => {
     service.nearbySearch({
         location: this.state.center,
         radius: 5000,
@@ -42,7 +49,10 @@ export default class extends Component {
                   placeid: place.place_id
                 };
             });
-           this.setState({ markers: this.state.markers.concat(markers) });
+           //avoiding callback set first time
+           if(this.state.markers.length <= 1){
+             this.setState({ markers: this.state.markers.concat(markers) });
+           }
            console.log("Open restaurant:", markers);
            console.log("\n");
        }.bind(this));
@@ -53,9 +63,9 @@ export default class extends Component {
     let markers = this.state.markers;
     this.setState({timeValue: event.target.value});
 
-    var container = document.getElementById('search');
-    const services = new google.maps.places.PlacesService(container);
-    this.getMarkers(services);
+    let container = document.getElementById('search');
+    const service = new google.maps.places.PlacesService(container);
+    this.loadMarkers(service);
 
     //filters markers with only placeid
     markers = markers.filter(place => (place.placeid));
@@ -69,7 +79,7 @@ export default class extends Component {
         var AMPM = time.match(/([AaPp][Mm])$/)[1];
         console.log("AMPM:",AMPM);
         if(AMPM == "PM" && hours<12) hours = hours+12;
-        if(AMPM == "AM" && hours==12) hours = hours-12;
+        if(AMPM == "AM" && hours==12) hours = hours+24;
         var sHours = hours.toString();
         var sMinutes = minutes.toString();
         if(hours<10) sHours = "0" + sHours;
@@ -84,7 +94,7 @@ export default class extends Component {
       var request = {
         placeId: place.placeid
       };
-      services.getDetails(request, (place, status) => {
+      service.getDetails(request, (place, status) => {
         if(place != null){
           let checkHours = place.opening_hours.weekday_text[today].split(': ')[1];
           if(checkHours === "Open 24 hours"){
@@ -125,11 +135,11 @@ export default class extends Component {
         }
         itemsProcessed++;
         if(itemsProcessed === markers.length) {
-          callback();
+          setMarkers();
         }
       });
     });
-    let callback = () => {
+    let setMarkers = () => {
       this.setState({ markers: openMarkers });
       console.log("Restaurants open now", openMarkers);
     }
@@ -137,9 +147,9 @@ export default class extends Component {
 
   componentDidMount() {
     // places service needs an HTML element to work
-    var container = document.getElementById('search');
+    let container = document.getElementById('search');
     const service = new google.maps.places.PlacesService(container);
-    this.getMarkers(service)
+    this.loadMarkers(service)
    }
 
   render() {
@@ -166,7 +176,6 @@ export default class extends Component {
         value={this.state.timeValue}
         onChange={this.handleChange.bind(this)}
       />
-
 
       </div>
 
