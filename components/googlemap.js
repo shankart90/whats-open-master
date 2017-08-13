@@ -14,7 +14,7 @@ const SimpleMap = withGoogleMap(props =>
         },
       ],
     }}
-    defaultZoom={17}
+    defaultZoom={14}
     defaultCenter={props.center}
     onClick={props.onMapClick}
   > {props.markers.map((marker, index) =>
@@ -29,8 +29,8 @@ export default ({ onMapLoad, markers, center }) => {
       containerElement={
         <div
           style={{
-            height: '100vh',
-            width: '50%',
+            height: '50vh',
+            width: '100%',
           }}
         />
       }

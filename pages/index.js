@@ -19,33 +19,63 @@ export default class extends Component {
           },
         ],
         center: { lat: 37.792015, lng: -122.401695 },
-        value: ''
+        timeValue: ''
       };
   }
+
+  getMarkers = (service) => {
+    service.nearbySearch({
+        location: this.state.center,
+        radius: 5000,
+        type: ['restaurant'],
+      },function(data) {
+            if(data === null) {return;}
+            console.log("All restaurant:", data)
+            let markers = data.filter(place => (place.opening_hours &&
+              place.opening_hours.open_now));
+            markers = markers.map(place => {
+                //console.log(place)
+                 return {
+                  position: place.geometry.location,
+                  content: place.name,
+                  key: place.id,
+                  placeid: place.place_id
+                };
+            });
+           this.setState({ markers: this.state.markers.concat(markers) });
+           console.log("Open restaurant:", markers);
+           console.log("\n");
+       }.bind(this));
+   }
 
   handleChange = (event) => {
     let currentTime = (event.target.value);
     let markers = this.state.markers;
-    this.setState({value: event.target.value});
+    this.setState({timeValue: event.target.value});
 
     var container = document.getElementById('search');
     const services = new google.maps.places.PlacesService(container);
+    this.getMarkers(services);
+
+    //filters markers with only placeid
     markers = markers.filter(place => (place.placeid));
     let openMarkers = [];
 
     const today = (new Date().getDay() + 6) % 7;
-    const parseRangeTime = time => {
-      var hours = Number(time.match(/^(\d+)/)[1]);
-      var minutes = Number(time.match(/:(\d+)/)[1]);
-      var AMPM = time.match(/\s(.*)$/)[1];
-      if(AMPM == "PM" && hours<12) hours = hours+12;
-      if(AMPM == "AM" && hours==12) hours = hours-12;
-      var sHours = hours.toString();
-      var sMinutes = minutes.toString();
-      if(hours<10) sHours = "0" + sHours;
-      if(minutes<10) sMinutes = "0" + sMinutes;
-      //console.log(sHours + ":" + sMinutes);
-      return (sHours + ":" + sMinutes +  ":" + "00")
+    const checkTime = time => {
+        var hours = Number(time.match(/^(\d+)/)[1]);
+        var minutes = Number(time.match(/:(\d+)/)[1]);
+        console.log("hours:minutes", hours:minutes);
+        var AMPM = time.match(/([AaPp][Mm])$/)[1];
+        console.log("AMPM:",AMPM);
+        if(AMPM == "PM" && hours<12) hours = hours+12;
+        if(AMPM == "AM" && hours==12) hours = hours-12;
+        var sHours = hours.toString();
+        var sMinutes = minutes.toString();
+        if(hours<10) sHours = "0" + sHours;
+        if(minutes<10) sMinutes = "0" + sMinutes;
+        console.log("sHours + ":" + sMinutes", sHours + ":" + sMinutes);
+        return (sHours + ":" + sMinutes +  ":" + "00")
     };
 
     let itemsProcessed = 0;
@@ -56,28 +86,42 @@ export default class extends Component {
       };
       services.getDetails(request, (place, status) => {
         if(place != null){
-          const checkVal = place.opening_hours.weekday_text[today].split(': ')[1];
-          if(checkVal === "Open 24 hours"){
+          let checkHours = place.opening_hours.weekday_text[today].split(': ')[1];
+          if(checkHours === "Open 24 hours"){
             openMarkers.push({
                position: place.geometry.location,
                content: place.name,
                key: place.id,
                placeid: place.place_id
              });
-          }else{
-              const [start, end] = checkVal.split(' – ');
-              const isInRange =
-                   currentTime >= parseRangeTime(start) &&
-                   currentTime < parseRangeTime(end);
-              if(isInRange === true){
-                openMarkers.push({
-                   position: place.geometry.location,
-                   content: place.name,
-                   key: place.id,
-                   placeid: place.place_id
-                 });
-              }
           }
+          else{
+              console.log("checkHours:", checkHours);
+              checkHours = checkHours.split(',');
+              checkHours.forEach((element) => {
+                  console.log("element:", element);
+                  let [start, end] = element.split(' – ');
+                  console.log("start, end:", start, end)
+                  start = start.replace(/\s/g, '');
+                  end = end.replace(/\s/g, '');
+                  const isInRange =
+                       currentTime >= checkTime(start) &&
+                       currentTime <= checkTime(end);
+                  if(isInRange === true){
+                    openMarkers.push({
+                       position: place.geometry.location,
+                       content: place.name,
+                       key: place.id,
+                       placeid: place.place_id
+                     });
+                  }
+                  console.log("checkTime(start)", checkTime(start),
+                              "currentTime", currentTime,
+                              "checkTime(end)", checkTime(end));
+                  console.log("isInRange", isInRange);
+                  console.log('\n')
+              });//checkHours
+          }//else
         }
         itemsProcessed++;
         if(itemsProcessed === markers.length) {
@@ -86,9 +130,8 @@ export default class extends Component {
       });
     });
     let callback = () => {
-      //console.log(this.state.markers);
-      console.log(openMarkers);
       this.setState({ markers: openMarkers });
+      console.log("Restaurants open now", openMarkers);
     }
   }
 
@@ -96,33 +139,7 @@ export default class extends Component {
     // places service needs an HTML element to work
     var container = document.getElementById('search');
     const service = new google.maps.places.PlacesService(container);
-
-    service.nearbySearch(
-      {
-        location: this.state.center,
-        radius: 5000,
-        type: ['restaurant'],
-      },
-      data => {
-        if (data === null) {
-          return;
-        }
-        console.log(data);
-        let markers = data.filter(place => (place.opening_hours &&
-          place.opening_hours.open_now));
-        markers = markers.map(place => {
-            //console.log(place)
-             return {
-              position: place.geometry.location,
-              content: place.name,
-              key: place.id,
-              placeid: place.place_id
-            };
-        });
-       //console.log(markers);
-       this.setState({ markers: this.state.markers.concat(markers) });
-      }
-    );
+    this.getMarkers(service)
    }
 
   render() {
@@ -146,9 +163,10 @@ export default class extends Component {
 
       <input type='time'
         step='1' min="00:00:00" max="20:00:00"
-        value={this.state.value}
+        value={this.state.timeValue}
         onChange={this.handleChange.bind(this)}
       />
+
 
       </div>
 
