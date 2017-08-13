@@ -21,11 +21,9 @@ export default class extends Component {
         center: { lat: 37.792015, lng: -122.401695 },
         value: ''
       };
-    this.handleChange = this.handleChange.bind(this);
-    //this.callback = this.callback.bind(this);
   }
 
-  handleChange(event) {
+  handleChange = (event) => {
     let currentTime = (event.target.value);
     let markers = this.state.markers;
     this.setState({value: event.target.value});
@@ -83,18 +81,15 @@ export default class extends Component {
         }
         itemsProcessed++;
         if(itemsProcessed === markers.length) {
-          this.callback();
+          callback();
         }
       });
     });
-
-    // function callback(){
-    //   console.log(openMarkers)
-    // }
-    callback = () => {
-      console.log(this.state);
+    let callback = () => {
+      //console.log(this.state.markers);
+      console.log(openMarkers);
+      this.setState({ markers: openMarkers });
     }
-
   }
 
   componentDidMount() {
@@ -112,7 +107,7 @@ export default class extends Component {
         if (data === null) {
           return;
         }
-        //console.log(data);
+        console.log(data);
         let markers = data.filter(place => (place.opening_hours &&
           place.opening_hours.open_now));
         markers = markers.map(place => {
@@ -152,7 +147,7 @@ export default class extends Component {
       <input type='time'
         step='1' min="00:00:00" max="20:00:00"
         value={this.state.value}
-        onChange={this.handleChange}
+        onChange={this.handleChange.bind(this)}
       />
 
       </div>
