@@ -76,7 +76,10 @@ export default class extends Component {
         var hours = Number(time.match(/^(\d+)/)[1]);
         var minutes = Number(time.match(/:(\d+)/)[1]);
         console.log("hours:minutes", hours:minutes);
-        var AMPM = time.match(/([AaPp][Mm])$/)[1];
+        var AMPM = '';
+        if((time.includes('PM') === true) || (time.includes('AM')=== true)){
+            AMPM = time.match(/([AaPp][Mm])$/)[1];
+        }else{AMPM = 'PM'}//missing AMPM in api req
         console.log("AMPM:",AMPM);
         if(AMPM == "PM" && hours<12) hours = hours+12;
         if(AMPM == "AM" && hours==12) hours = hours+24;
